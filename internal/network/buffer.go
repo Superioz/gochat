@@ -61,7 +61,12 @@ func ReadString(buf *bytes.Buffer) string {
 // Reads a boolean from byte buffer
 // Uses byte order of BigEndian
 func ReadBool(buf *bytes.Buffer) bool {
-	i, _ := buf.ReadByte()
+	i, err := buf.ReadByte()
+
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
 	var b bool
 	if i == 1 {
 		b = true
