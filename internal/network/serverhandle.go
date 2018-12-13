@@ -22,7 +22,7 @@ type Server struct {
 // with the id representing the index inside the
 // client map - 1
 type ServerClient struct {
-	Id         int
+	Id         uint16
 	Connection net.Conn
 }
 
@@ -44,7 +44,7 @@ func NewServer(p string) Server {
 
 // Adds a new client instance to the server
 func (s *Server) Add(conn net.Conn) *ServerClient {
-	c := &ServerClient{len(s.Clients) + 1, conn}
+	c := &ServerClient{uint16(len(s.Clients)) + 1, conn}
 	s.Clients[conn] = c
 	return c
 }
