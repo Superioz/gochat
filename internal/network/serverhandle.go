@@ -103,14 +103,14 @@ func serverHandle(s *Server) {
 
 			// broadcast the incoming message to every client
 			for _, cl := range s.Clients {
-				go func() {
-					p := NewMessagePacket(cl.Id, fullMessage)
-					_, err := cl.Connection.Write(p.encode())
+				go func(c ServerClient) {
+					p := NewMessagePacket(c.Id, fullMessage)
+					_, err := c.Connection.Write(p.encode())
 
 					if err != nil {
-						s.DeadConnection <- cl.Connection
+						s.DeadConnection <- c.Connection
 					}
-				}()
+				}(cl)
 			}
 			break
 		}
@@ -144,12 +144,6 @@ loop:
 
 			if !p.Passed {
 				p.Passed = true
-				for _, cl := range s.Clients {
-					if cl.Name == p.Client {
-						p.Passed = false
-						break
-					}
-				}
 				p.ClientId = c.Id
 
 				fmt.Println("Sending response to", p.Client, "( Passed:", p.Passed, ") ...")
