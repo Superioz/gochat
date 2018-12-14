@@ -10,7 +10,7 @@ func TestWriteUint16(t *testing.T) {
 
 	val := uint16(20)
 	WriteUint16(b, val)
-	val2 := ReadUint16(b)
+	val2, _ := ReadUint16(b)
 
 	if val != val2 {
 		t.Errorf("written value is not equals expected value. %d!=%d", val, val2)
@@ -22,7 +22,7 @@ func TestWriteString(t *testing.T) {
 
 	val := "test"
 	WriteString(b, val)
-	val2 := ReadString(b)
+	val2, _ := ReadString(b)
 
 	if val != val2 {
 		t.Errorf("written value is not equals expected value. %s!=%s", val, val2)
@@ -33,7 +33,7 @@ func TestWriteBool(t *testing.T) {
 	b := bytes.NewBuffer([]byte{})
 
 	WriteBool(b, true)
-	val2 := ReadBool(b)
+	val2, _ := ReadBool(b)
 
 	if true != val2 {
 		t.Error("written value is not equals expected value.")
