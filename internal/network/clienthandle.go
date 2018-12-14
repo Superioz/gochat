@@ -5,19 +5,23 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"reflect"
 )
 
 // Represents the this client with the connection
 // to the tcp server and message channels
 type Client struct {
-	Connection       net.Conn
-	OutgoingMessages chan string
-	IncomingMessages chan string
+	Id              uint16
+	Name            string
+	Connection      net.Conn
+	OutgoingPackets chan Packet
+	IncomingPackets chan Packet
+	Passed          bool
 }
 
 // Creates a new client object
-func NewClient() Client {
-	return Client{OutgoingMessages: make(chan string), IncomingMessages: make(chan string)}
+func NewClient(n string) Client {
+	return Client{Name: n, OutgoingPackets: make(chan Packet), IncomingPackets: make(chan Packet)}
 }
 
 // Connects to a tcp server with given ip
@@ -35,12 +39,25 @@ func (cl *Client) ConnectAndListen(ip string) {
 	// Read incoming messages from the server
 	// and put them into the incoming channel
 	go func() {
-		r := bufio.NewScanner(cl.Connection)
+		r := bufio.NewReader(cl.Connection)
 
-		for r.Scan() {
-			cl.IncomingMessages <- r.Text()
+		for {
+			b, _, _ := r.ReadLine()
+			p, err := DecodeBytes(b)
+
+			if err != nil {
+				continue
+			}
+
+			cl.IncomingPackets <- p
 		}
 	}()
+
+	// Send handshake
+	if !cl.Passed {
+		fmt.Println("Sending handshake to server ...")
+		cl.OutgoingPackets <- NewHandshakePacket(cl.Name)
+	}
 }
 
 // Listens for the channels of outgoing and
@@ -49,14 +66,35 @@ func (cl *Client) ConnectAndListen(ip string) {
 func clientListen(cl *Client) {
 	for {
 		select {
-		case s := <-cl.OutgoingMessages:
-			_, err := cl.Connection.Write([]byte(s + "\n"))
+		case s := <-cl.OutgoingPackets:
+			if !cl.Passed && reflect.TypeOf(s) != reflect.TypeOf(&HandshakePacket{}) {
+				fmt.Println("Can't send packet if client is not passed!")
+				break
+			}
+
+			_, err := cl.Connection.Write(s.encode())
 			if err != nil {
 				log.Fatal(err)
 			}
 			break
-		case m := <-cl.IncomingMessages:
-			fmt.Println(m)
+		case m := <-cl.IncomingPackets:
+			switch m.(type) {
+			case *HandshakePacket:
+				p := m.(*HandshakePacket)
+				if cl.Passed || !p.Passed {
+					break
+				}
+
+				cl.Passed = p.Passed
+				cl.Id = p.ClientId
+				fmt.Printf("Passed connection to server with id #%d\n", cl.Id)
+				break
+			case *MessagePacket:
+				p := m.(*MessagePacket)
+
+				fmt.Println(p.Message)
+				break
+			}
 			break
 		}
 	}

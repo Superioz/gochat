@@ -6,6 +6,9 @@ import (
 )
 
 func main() {
+	// Initializes the default packets
+	network.InitializeRegistry()
+
 	s := network.NewServer(":6000")
 	fmt.Println("Starting tcp server @" + s.Port + " ...")
 

@@ -3,6 +3,7 @@ package network
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 )
 
@@ -47,25 +48,30 @@ func WriteBool(buf *bytes.Buffer, b bool) {
 
 // Reads an unsigned int with byte length 2 from byte buffer
 // Uses byte order of BigEndian
-func ReadUint16(buf *bytes.Buffer) uint16 {
-	return binary.BigEndian.Uint16(buf.Next(2))
+func ReadUint16(buf *bytes.Buffer) (uint16, error) {
+	if buf.Len() < 2 {
+		return 0, errors.New("buffer size lower than 2")
+	}
+	return binary.BigEndian.Uint16(buf.Next(2)), nil
 }
 
 // Reads a string with its length from byte buffer
 // Uses byte order of BigEndian
-func ReadString(buf *bytes.Buffer) string {
-	l := ReadUint16(buf)
-	return string(buf.Next(int(l)))
+func ReadString(buf *bytes.Buffer) (string, error) {
+	l, err := ReadUint16(buf)
+	if err != nil {
+		return "", err
+	}
+	return string(buf.Next(int(l))), nil
 }
 
 // Reads a boolean from byte buffer
 // Uses byte order of BigEndian
-func ReadBool(buf *bytes.Buffer) bool {
+func ReadBool(buf *bytes.Buffer) (bool, error) {
 	i, err := buf.ReadByte()
 
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return false, err
 	}
 	var b bool
 	if i == 1 {
@@ -73,5 +79,5 @@ func ReadBool(buf *bytes.Buffer) bool {
 	} else {
 		b = false
 	}
-	return b
+	return b, nil
 }

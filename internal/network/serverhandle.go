@@ -10,7 +10,7 @@ import (
 // Represents this servers with its connected clients
 // and the associated channels
 type Server struct {
-	Clients        map[net.Conn]*ServerClient
+	Clients        map[uint16]ServerClient
 	Port           string
 	NewConnection  chan net.Conn
 	DeadConnection chan net.Conn
@@ -23,7 +23,9 @@ type Server struct {
 // client map - 1
 type ServerClient struct {
 	Id         uint16
+	Name       string
 	Connection net.Conn
+	Passed     bool
 }
 
 // Represents a single message sent by a client
@@ -35,7 +37,7 @@ type Message struct {
 // Creates a new server instance
 func NewServer(p string) Server {
 	return Server{
-		Clients:       make(map[net.Conn]*ServerClient),
+		Clients:       make(map[uint16]ServerClient),
 		Port:          p,
 		NewConnection: make(chan net.Conn),
 		Messages:      make(chan Message),
@@ -43,16 +45,16 @@ func NewServer(p string) Server {
 }
 
 // Adds a new client instance to the server
-func (s *Server) Add(conn net.Conn) *ServerClient {
-	c := &ServerClient{uint16(len(s.Clients)) + 1, conn}
-	s.Clients[conn] = c
+func (s *Server) Add(conn net.Conn) ServerClient {
+	c := ServerClient{Id: uint16(len(s.Clients)) + 1, Connection: conn}
+	s.Clients[c.Id] = c
 	return c
 }
 
 // Removes a client instance from the server
 // For example if the connection died.
-func (s *Server) Remove(c net.Conn) {
-	delete(s.Clients, c)
+func (s *Server) Remove(cl ServerClient) {
+	delete(s.Clients, cl.Id)
 }
 
 // Starts the tcp server and listens for incoming connections
@@ -89,7 +91,7 @@ func serverHandle(s *Server) {
 		select {
 		case c := <-s.NewConnection:
 			cl := s.Add(c)
-			fmt.Printf("Client connected (#%d)\n", cl.Id)
+			fmt.Printf("Client connected (#%d) Not passed yet though\n", cl.Id)
 
 			// start go routine for handling incoming messages
 			go serverHandleMessages(s, cl)
@@ -100,12 +102,13 @@ func serverHandle(s *Server) {
 			fmt.Println(fullMessage)
 
 			// broadcast the incoming message to every client
-			for conn := range s.Clients {
+			for _, cl := range s.Clients {
 				go func() {
-					_, err := conn.Write([]byte(fullMessage + "\n"))
+					p := NewMessagePacket(cl.Id, fullMessage)
+					_, err := cl.Connection.Write(p.encode())
 
 					if err != nil {
-						s.DeadConnection <- conn
+						s.DeadConnection <- cl.Connection
 					}
 				}()
 			}
@@ -117,16 +120,56 @@ func serverHandle(s *Server) {
 // Handles the message of a single client by scanning
 // the connection to the tcp server and adding them
 // to the incoming message channel
-func serverHandleMessages(s *Server, c *ServerClient) {
-	reader := bufio.NewScanner(c.Connection)
-	for reader.Scan() {
-		incoming := reader.Text()
+func serverHandleMessages(s *Server, c ServerClient) {
+	reader := bufio.NewReader(c.Connection)
 
-		s.Messages <- Message{*c, incoming}
+loop:
+	for {
+		b, _, err := reader.ReadLine()
+		if err != nil {
+			fmt.Println("Error while reading line", err)
+			break
+		}
+
+		m, err := DecodeBytes(b)
+
+		if err != nil {
+			break
+		}
+
+		switch m.(type) {
+		case *HandshakePacket:
+			p := m.(*HandshakePacket)
+			fmt.Println("Received handshake from", p.Client, " ..")
+
+			if !p.Passed {
+				p.Passed = true
+				for _, cl := range s.Clients {
+					if cl.Name == p.Client {
+						p.Passed = false
+						break
+					}
+				}
+				p.ClientId = c.Id
+
+				fmt.Println("Sending response to", p.Client, "( Passed:", p.Passed, ") ...")
+
+				_, err := c.Connection.Write(p.encode())
+				if err != nil {
+					break loop
+				}
+			}
+			break
+		case *MessagePacket:
+			p := m.(*MessagePacket)
+
+			s.Messages <- Message{c, p.Message}
+			break
+		}
 	}
 
 	// If there is nothing to read, something must have failed
 	// therefore remove the connection
-	s.Remove(c.Connection)
+	s.Remove(c)
 	fmt.Printf("Client disconnected (#%d)\n", c.Id)
 }
