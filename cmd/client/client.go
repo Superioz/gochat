@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"github.com/streadway/amqp"
 	"github.com/superioz/gochat/internal/network"
 	"os"
 )
@@ -9,6 +10,9 @@ import (
 func main() {
 	// Initializes the default packets
 	network.InitializeRegistry()
+
+	// just to lock the repository
+	_ = amqp.ChannelError
 
 	cl := network.NewClient("hure")
 	cl.ConnectAndListen("localhost:6000")
