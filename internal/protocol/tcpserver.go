@@ -8,6 +8,7 @@ import (
 	"net"
 )
 
+// represents a tcp server
 type TCPServer struct {
 	Listener         net.Listener
 	outgoingMessages chan *network.MessagePacket
@@ -29,6 +30,7 @@ func NewTCPServer() TCPServer {
 	}
 }
 
+// starts the tcp server with given `ip`
 func (s *TCPServer) Start(ip string) error {
 	server, err := net.Listen("tcp", ip)
 	if err != nil {
@@ -37,6 +39,7 @@ func (s *TCPServer) Start(ip string) error {
 	s.Listener = server
 	fmt.Println("TCP server started. Ready for connections..")
 
+	// listens for new connections
 	go func(s TCPServer) {
 		for {
 			conn, err := s.Listener.Accept()
@@ -49,6 +52,7 @@ func (s *TCPServer) Start(ip string) error {
 		}
 	}(*s)
 
+	// handler for connections and messages
 	go func(s TCPServer) {
 		for {
 			select {
@@ -71,6 +75,7 @@ func (s *TCPServer) Start(ip string) error {
 							break
 						}
 
+						// put decoded packet into channel
 						p := m.(*network.MessagePacket)
 						s.incomingMessages <- p
 					}
@@ -106,6 +111,8 @@ func (s *TCPServer) Start(ip string) error {
 	return nil
 }
 
+// stops the tcp server
+// returns an error if unsuccessful
 func (s TCPServer) Stop() error {
 	s.Clients = make(map[net.Conn]uint16)
 	err := s.Listener.Close()
@@ -120,14 +127,17 @@ func (s TCPServer) Stop() error {
 	return nil
 }
 
+// returns the send message channel
 func (s TCPServer) Send() chan *network.MessagePacket {
 	return s.outgoingMessages
 }
 
+// returns the receive message channel
 func (s TCPServer) Receive() chan *network.MessagePacket {
 	return s.incomingMessages
 }
 
+// returns the current connection state channel
 func (s TCPServer) State() chan bool {
 	return s.stateUpdates
 }

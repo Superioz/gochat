@@ -10,19 +10,22 @@ import (
 	"reflect"
 )
 
+// represents a tcp client
 type TCPClient struct {
 	Nickname         string
 	Connection       *net.Conn
 	outgoingMessages chan *network.MessagePacket
 	incomingMessages chan *network.MessagePacket
-	StateUpdates     chan bool
+	stateUpdates     chan bool
 }
 
 func NewTCPClient() TCPClient {
 	return TCPClient{Nickname: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
-		incomingMessages: make(chan *network.MessagePacket), StateUpdates: make(chan bool)}
+		incomingMessages: make(chan *network.MessagePacket), stateUpdates: make(chan bool)}
 }
 
+// connects the client to the tcp server
+// uses the `ip` to connect to the server
 func (p *TCPClient) Connect(ip string) {
 	conn, err := net.Dial("tcp", ip)
 	if err != nil {
@@ -31,7 +34,7 @@ func (p *TCPClient) Connect(ip string) {
 	p.Connection = &conn
 
 	select {
-	case p.StateUpdates <- true:
+	case p.stateUpdates <- true:
 	default:
 	}
 
@@ -67,16 +70,18 @@ func (p *TCPClient) Connect(ip string) {
 	}(p)
 }
 
+// disconnects the client from the tcp server
 func (p *TCPClient) Disconnect() error {
 	err := (*p.Connection).Close()
 	if err != nil {
 		return err
 	}
-	p.StateUpdates <- false
+	p.stateUpdates <- false
 
 	return nil
 }
 
+// sends a message packet to the server
 func (p TCPClient) Send(packet network.MessagePacket) {
 	select {
 	case p.outgoingMessages <- &packet:
@@ -88,10 +93,12 @@ func (p TCPClient) Send(packet network.MessagePacket) {
 	}
 }
 
+// returns receive channel
 func (p TCPClient) Receive() chan *network.MessagePacket {
 	return p.incomingMessages
 }
 
+// returns the current connection state channel
 func (p TCPClient) State() chan bool {
-	return p.StateUpdates
+	return p.stateUpdates
 }
