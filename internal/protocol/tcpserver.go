@@ -10,12 +10,23 @@ import (
 
 type TCPServer struct {
 	Listener         net.Listener
-	OutgoingMessages chan *network.MessagePacket
-	IncomingMessages chan *network.MessagePacket
-	NewConnections   chan net.Conn
-	DeadConnections  chan net.Conn
-	StateUpdates     chan bool
+	outgoingMessages chan *network.MessagePacket
+	incomingMessages chan *network.MessagePacket
+	newConnections   chan net.Conn
+	deadConnections  chan net.Conn
+	stateUpdates     chan bool
 	Clients          map[net.Conn]uint16
+}
+
+func NewTCPServer() TCPServer {
+	return TCPServer{
+		outgoingMessages: make(chan *network.MessagePacket),
+		incomingMessages: make(chan *network.MessagePacket),
+		newConnections:   make(chan net.Conn),
+		deadConnections:  make(chan net.Conn),
+		stateUpdates:     make(chan bool),
+		Clients:          make(map[net.Conn]uint16),
+	}
 }
 
 func (s *TCPServer) Start(ip string) error {
@@ -24,7 +35,7 @@ func (s *TCPServer) Start(ip string) error {
 		log.Fatal(err)
 	}
 	s.Listener = server
-	s.StateUpdates <- true
+	fmt.Println("TCP server started. Ready for connections..")
 
 	go func(s TCPServer) {
 		for {
@@ -34,15 +45,16 @@ func (s *TCPServer) Start(ip string) error {
 			}
 
 			// write the new connection to channel
-			s.NewConnections <- conn
+			s.newConnections <- conn
 		}
 	}(*s)
 
 	go func(s TCPServer) {
 		for {
 			select {
-			case c := <-s.NewConnections:
-				s.Clients[c] = uint16(len(s.Clients)+1)
+			case c := <-s.newConnections:
+				s.Clients[c] = uint16(len(s.Clients) + 1)
+				fmt.Printf("Client #%d connected.\n", s.Clients[c])
 
 				// start go routine for handling incoming messages
 				go func(c net.Conn) {
@@ -51,24 +63,27 @@ func (s *TCPServer) Start(ip string) error {
 					for {
 						b, _, err := reader.ReadLine()
 						if err != nil {
-							fmt.Println("Error while reading line", err)
 							break
 						}
 
 						m, err := network.DecodeBytes(b)
-
 						if err != nil {
 							break
 						}
 
 						p := m.(*network.MessagePacket)
-						s.IncomingMessages <- p
+						s.incomingMessages <- p
 					}
 
-
+					s.deadConnections <- c
 				}(c)
 				break
-			case m := <-s.IncomingMessages:
+			case c := <-s.deadConnections:
+				id := s.Clients[c]
+				delete(s.Clients, c)
+				fmt.Printf("Client #%d disconnected.\n", id)
+				break
+			case m := <-s.incomingMessages:
 				// print client message to console
 				fmt.Println(m.Message)
 
@@ -78,7 +93,7 @@ func (s *TCPServer) Start(ip string) error {
 						_, err := c.Write(m.Encode())
 
 						if err != nil {
-							s.DeadConnections <- c
+							s.deadConnections <- c
 						}
 					}(cl, *m)
 				}
@@ -87,6 +102,7 @@ func (s *TCPServer) Start(ip string) error {
 		}
 	}(*s)
 
+	s.stateUpdates <- true
 	return nil
 }
 
@@ -96,18 +112,22 @@ func (s TCPServer) Stop() error {
 	if err != nil {
 		return err
 	}
-	s.StateUpdates <- false
+
+	// update state
+	select {
+	case s.stateUpdates <- false:
+	}
 	return nil
 }
 
 func (s TCPServer) Send() chan *network.MessagePacket {
-	return s.OutgoingMessages
+	return s.outgoingMessages
 }
 
 func (s TCPServer) Receive() chan *network.MessagePacket {
-	return s.IncomingMessages
+	return s.incomingMessages
 }
 
 func (s TCPServer) State() chan bool {
-	return s.StateUpdates
+	return s.stateUpdates
 }

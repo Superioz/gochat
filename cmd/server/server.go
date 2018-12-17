@@ -1,22 +1,29 @@
 package main
 
 import (
+	"fmt"
+	"github.com/superioz/gochat/internal/input"
 	"github.com/superioz/gochat/internal/network"
+	"github.com/superioz/gochat/internal/protocol"
 )
 
 func main() {
 	// Initializes the default packets
 	network.InitializeRegistry()
 
-	/*s := network.NewServer(":6000")
-	fmt.Println("Starting tcp server @" + s.Port + " ...")
+	s := protocol.NewTCPServer()
+	err := s.Start(":6000")
+	if err != nil {
+		panic(err)
+	}
 
-	// Starts the tcp server
-	s.ListenAndHandle()
-	fmt.Println("Started tcp server.")*/
-
-	// Application has to be killed to exit
+	i := input.ListenToConsole()
 	for {
-		select {}
+		select {
+		case m := <-i:
+			fmt.Println(m)
+			s.Send() <- &network.MessagePacket{Message: string(m)}
+			break
+		}
 	}
 }

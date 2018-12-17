@@ -47,8 +47,8 @@ type MessagePacket struct {
 	Message  string
 }
 
-func NewMessagePacket(m string) Packet {
-	return &MessagePacket{Message: m}
+func NewMessagePacket(m string) *MessagePacket {
+	return &MessagePacket{Id: 0, Message: m}
 }
 
 func (p *MessagePacket) Encode() []byte {

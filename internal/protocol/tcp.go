@@ -2,35 +2,50 @@ package protocol
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/superioz/gochat/internal/network"
+	"github.com/superioz/gochat/internal/nickname"
 	"log"
 	"net"
 	"reflect"
 )
 
 type TCPClient struct {
+	Nickname         string
 	Connection       *net.Conn
-	OutgoingMessages chan *network.MessagePacket
-	IncomingMessages chan *network.MessagePacket
+	outgoingMessages chan *network.MessagePacket
+	incomingMessages chan *network.MessagePacket
 	StateUpdates     chan bool
 }
 
-func (p *TCPClient) Connect(ip string) error {
+func NewTCPClient() TCPClient {
+	return TCPClient{Nickname: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
+		incomingMessages: make(chan *network.MessagePacket), StateUpdates: make(chan bool)}
+}
+
+func (p *TCPClient) Connect(ip string) {
 	conn, err := net.Dial("tcp", ip)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 	p.Connection = &conn
-	p.StateUpdates <- true
+
+	select {
+	case p.StateUpdates <- true:
+	default:
+	}
 
 	go func(p *TCPClient) {
 		for {
 			select {
-			case s := <-p.OutgoingMessages:
+			case s := <-p.outgoingMessages:
 				_, err := (*p.Connection).Write(s.Encode())
 				if err != nil {
 					log.Fatal(err)
 				}
+				break
+			case m := <-p.incomingMessages:
+				fmt.Println(m.Message)
 				break
 			}
 		}
@@ -43,14 +58,13 @@ func (p *TCPClient) Connect(ip string) error {
 			b, _, _ := r.ReadLine()
 			m, err := network.DecodeBytes(b)
 
-			if err != nil || reflect.TypeOf(m) != reflect.TypeOf(network.MessagePacket{}) {
+			if err != nil || (reflect.TypeOf(m) != reflect.TypeOf(&network.MessagePacket{})) {
 				continue
 			}
 
-			p.IncomingMessages <- m.(*network.MessagePacket)
+			p.incomingMessages <- m.(*network.MessagePacket)
 		}
 	}(p)
-	return nil
 }
 
 func (p *TCPClient) Disconnect() error {
@@ -63,12 +77,19 @@ func (p *TCPClient) Disconnect() error {
 	return nil
 }
 
-func (p TCPClient) Send() chan *network.MessagePacket {
-	return p.OutgoingMessages
+func (p TCPClient) Send(packet network.MessagePacket) {
+	select {
+	case p.outgoingMessages <- &packet:
+		// successful
+		break
+	default:
+		// not successful
+		break
+	}
 }
 
 func (p TCPClient) Receive() chan *network.MessagePacket {
-	return p.IncomingMessages
+	return p.incomingMessages
 }
 
 func (p TCPClient) State() chan bool {

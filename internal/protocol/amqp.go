@@ -3,42 +3,43 @@ package protocol
 import (
 	"github.com/streadway/amqp"
 	"github.com/superioz/gochat/internal/network"
+	"log"
 )
 
 const queueName string = "goqueue"
 
 type AMQPClient struct {
 	Connection       *amqp.Connection
-	OutgoingMessages chan *network.MessagePacket
-	IncomingMessages chan *network.MessagePacket
-	StateUpdates     chan bool
+	outgoingMessages chan *network.MessagePacket
+	incomingMessages chan *network.MessagePacket
+	stateUpdates     chan bool
 	Channel          *amqp.Channel
 	Queue            amqp.Queue
 }
 
-func (p *AMQPClient) Connect(ip string) error {
+func (p *AMQPClient) Connect(ip string) {
 	conn, err := amqp.Dial(ip)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 	p.Connection = conn
 
 	ch, err := conn.Channel()
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 	p.Channel = ch
 
 	q, err := ch.QueueDeclare(queueName, false, false, false, false, nil)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 	p.Queue = q
 
 	go func(p *AMQPClient) {
 		for {
 			select {
-			case s := <-p.OutgoingMessages:
+			case s := <-p.outgoingMessages:
 				err = ch.Publish("", q.Name, false, false,
 					amqp.Publishing{
 						ContentType: "text/plain",
@@ -51,17 +52,16 @@ func (p *AMQPClient) Connect(ip string) error {
 
 	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
 	go func(p *AMQPClient) {
 		for d := range msgs {
-			p.IncomingMessages <- &network.MessagePacket{Message: string(d.Body)}
+			p.incomingMessages <- &network.MessagePacket{Message: string(d.Body)}
 		}
 	}(p)
 
-	p.StateUpdates <- true
-	return nil
+	p.stateUpdates <- true
 }
 
 func (p *AMQPClient) Disconnect() error {
@@ -69,18 +69,25 @@ func (p *AMQPClient) Disconnect() error {
 	if err != nil {
 		return err
 	}
-	p.StateUpdates <- false
+	p.stateUpdates <- false
 	return nil
 }
 
-func (p AMQPClient) Send() chan *network.MessagePacket {
-	return p.OutgoingMessages
+func (p AMQPClient) Send(packet network.MessagePacket) {
+	select {
+	case p.outgoingMessages <- &packet:
+		// successful
+		break
+	default:
+		// not successful
+		break
+	}
 }
 
 func (p AMQPClient) Receive() chan *network.MessagePacket {
-	return p.IncomingMessages
+	return p.incomingMessages
 }
 
 func (p AMQPClient) State() chan bool {
-	return p.StateUpdates
+	return p.stateUpdates
 }
