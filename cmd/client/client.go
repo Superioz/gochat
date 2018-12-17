@@ -13,6 +13,8 @@ func main() {
 	// creates a new client
 	cl := protocol.NewTCPClient()
 	go cl.Connect("localhost:6000")
+
+	// TODO maybe with console commands specify the current client to use?
 	/*cl := protocol.NewAMQPClient()
 	go cl.Connect("amqp://guest:guest@localhost:5672")*/
 

@@ -86,6 +86,8 @@ func (s *TCPServer) Start(ip string) error {
 			case c := <-s.deadConnections:
 				id := s.Clients[c]
 				delete(s.Clients, c)
+				_ := c.Close()
+
 				fmt.Printf("Client #%d disconnected.\n", id)
 				break
 			case m := <-s.incomingMessages:

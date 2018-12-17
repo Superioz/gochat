@@ -21,11 +21,16 @@ type AMQPClient struct {
 	stateUpdates     chan bool
 	Channel          *amqp.Channel
 	Queue            amqp.Queue
+	Logging          bool
 }
 
 func NewAMQPClient() AMQPClient {
 	return AMQPClient{UUID: uuid.NewV4(), Nickname: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
-		incomingMessages: make(chan *network.MessagePacket), stateUpdates: make(chan bool)}
+		incomingMessages: make(chan *network.MessagePacket), stateUpdates: make(chan bool), Logging: false}
+}
+
+func (p *AMQPClient) ActivateLogging() {
+	p.Logging = true
 }
 
 // connects the client to the amqp server
