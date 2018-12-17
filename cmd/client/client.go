@@ -11,10 +11,10 @@ func main() {
 	network.InitializeRegistry()
 
 	// creates a new client
-	/*cl := protocol.NewTCPClient()
-	go cl.Connect("localhost:6000")*/
-	cl := protocol.NewAMQPClient()
-	go cl.Connect("amqp://guest:guest@localhost:5672")
+	cl := protocol.NewTCPClient()
+	go cl.Connect("localhost:6000")
+	/*cl := protocol.NewAMQPClient()
+	go cl.Connect("amqp://guest:guest@localhost:5672")*/
 
 	// listens to console input for message sending
 	i := input.ListenToConsole()
