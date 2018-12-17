@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"github.com/streadway/amqp"
 	"github.com/superioz/gochat/internal/network"
-	"os"
 )
 
 func main() {
@@ -14,7 +12,7 @@ func main() {
 	// just to lock the repository
 	_ = amqp.ChannelError
 
-	cl := network.NewClient("hure")
+	/*cl := network.NewClient("hure")
 	cl.ConnectAndListen("localhost:6000")
 
 	// Read input from console and writes it to
@@ -22,5 +20,5 @@ func main() {
 	s := bufio.NewScanner(os.Stdin)
 	for s.Scan() {
 		cl.OutgoingPackets <- network.NewMessagePacket(cl.Id, s.Text())
-	}
+	}*/
 }

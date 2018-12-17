@@ -10,8 +10,8 @@ var packetRegistry = make(map[uint16]Packet)
 // Returns an abstract packet. Only decodes and encodes
 // a []byte
 type Packet interface {
-	encode() []byte
-	decode([]byte) error
+	Encode() []byte
+	Decode([]byte) error
 }
 
 func GetPacket(id uint16) Packet {
@@ -19,8 +19,7 @@ func GetPacket(id uint16) Packet {
 }
 
 func InitializeRegistry() {
-	packetRegistry[0] = &HandshakePacket{Id: 0}
-	packetRegistry[1] = &MessagePacket{Id: 1}
+	packetRegistry[0] = &MessagePacket{Id: 0}
 }
 
 func DecodeBytes(b []byte) (Packet, error) {
@@ -36,44 +35,8 @@ func DecodeBytes(b []byte) (Packet, error) {
 		return nil, errors.New("can't find packet with given id")
 	}
 
-	err = packet.decode(b)
+	err = packet.Decode(b)
 	return packet, err
-}
-
-// Represents a packet which is for authentication at the server
-// Also a `Client` id as string can be passed.
-// `Passed` returns the result of the authentication.
-// The `Id` is the id of the packet in the registry.
-type HandshakePacket struct {
-	Id       uint16
-	Client   string
-	Passed   bool
-	ClientId uint16
-}
-
-func NewHandshakePacket(id string) Packet {
-	return &HandshakePacket{Id: 0, Client: id, Passed: false}
-}
-
-func (p *HandshakePacket) encode() []byte {
-	buf := bytes.NewBuffer([]byte{})
-
-	WriteUint16(buf, p.Id)
-	WriteString(buf, p.Client)
-	WriteBool(buf, p.Passed)
-	WriteUint16(buf, p.ClientId)
-	buf.WriteByte('\n')
-	return buf.Bytes()
-}
-
-func (p *HandshakePacket) decode(b []byte) error {
-	buf := bytes.NewBuffer(b)
-
-	p.Id, _ = ReadUint16(buf)
-	p.Client, _ = ReadString(buf)
-	p.Passed, _ = ReadBool(buf)
-	p.ClientId, _ = ReadUint16(buf)
-	return nil
 }
 
 // Represents a packet which is for sending
@@ -81,29 +44,26 @@ func (p *HandshakePacket) decode(b []byte) error {
 // The `Id` is the id of the packet in the registry.
 type MessagePacket struct {
 	Id       uint16
-	ClientId uint16
 	Message  string
 }
 
-func NewMessagePacket(id uint16, m string) Packet {
-	return &MessagePacket{Id: 1, ClientId: id, Message: m}
+func NewMessagePacket(m string) Packet {
+	return &MessagePacket{Message: m}
 }
 
-func (p *MessagePacket) encode() []byte {
+func (p *MessagePacket) Encode() []byte {
 	buf := bytes.NewBuffer([]byte{})
 
 	WriteUint16(buf, p.Id)
-	WriteUint16(buf, p.ClientId)
 	WriteString(buf, p.Message)
 	buf.WriteByte('\n')
 	return buf.Bytes()
 }
 
-func (p *MessagePacket) decode(b []byte) error {
+func (p *MessagePacket) Decode(b []byte) error {
 	buf := bytes.NewBuffer(b)
 
 	p.Id, _ = ReadUint16(buf)
-	p.ClientId, _ = ReadUint16(buf)
 	p.Message, _ = ReadString(buf)
 	return nil
 }
