@@ -1,6 +1,8 @@
 package protocol
 
 import (
+	"fmt"
+	"github.com/satori/go.uuid"
 	"github.com/streadway/amqp"
 	"github.com/superioz/gochat/internal/network"
 	"github.com/superioz/gochat/internal/nickname"
@@ -11,6 +13,7 @@ const queueName string = "goqueue"
 
 // represents an amqp client
 type AMQPClient struct {
+	UUID             uuid.UUID
 	Nickname         string
 	Connection       *amqp.Connection
 	outgoingMessages chan *network.MessagePacket
@@ -21,7 +24,7 @@ type AMQPClient struct {
 }
 
 func NewAMQPClient() AMQPClient {
-	return AMQPClient{Nickname: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
+	return AMQPClient{UUID: uuid.NewV4(), Nickname: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
 		incomingMessages: make(chan *network.MessagePacket), stateUpdates: make(chan bool)}
 }
 
@@ -41,12 +44,26 @@ func (p *AMQPClient) Connect(ip string) {
 	}
 	p.Channel = ch
 
+	// declares an exchange with name `chat` and type `fanout`
+	// sends to every queue bound to this exchange
+	err = ch.ExchangeDeclare("chat", "fanout", true,
+		false, false, false, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// declares a new queue with name=`queueName`
-	q, err := ch.QueueDeclare(queueName, false, false, false, false, nil)
+	q, err := ch.QueueDeclare(queueName+"_"+p.UUID.String(), false, false, true, false, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	p.Queue = q
+
+	// binds the queue to the exchange
+	err = ch.QueueBind(q.Name, "", "chat", false, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// handles outgoing messages
 	go func(p *AMQPClient) {
@@ -55,11 +72,13 @@ func (p *AMQPClient) Connect(ip string) {
 			// publishes a new message to the amqp server
 			// if the channel received a new message
 			case s := <-p.outgoingMessages:
-				err = ch.Publish("", q.Name, false, false,
+				err = ch.Publish("chat", "", false, false,
 					amqp.Publishing{
 						ContentType: "text/plain",
 						Body:        []byte(s.Message),
 					})
+			case m := <-p.incomingMessages:
+				fmt.Println(m.Message)
 				break
 			}
 		}

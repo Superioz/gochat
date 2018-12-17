@@ -3,6 +3,7 @@ package protocol
 import (
 	"bufio"
 	"fmt"
+	"github.com/satori/go.uuid"
 	"github.com/superioz/gochat/internal/network"
 	"github.com/superioz/gochat/internal/nickname"
 	"log"
@@ -12,6 +13,7 @@ import (
 
 // represents a tcp client
 type TCPClient struct {
+	UUID             uuid.UUID
 	Nickname         string
 	Connection       *net.Conn
 	outgoingMessages chan *network.MessagePacket
@@ -20,7 +22,7 @@ type TCPClient struct {
 }
 
 func NewTCPClient() TCPClient {
-	return TCPClient{Nickname: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
+	return TCPClient{UUID: uuid.NewV4(), Nickname: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
 		incomingMessages: make(chan *network.MessagePacket), stateUpdates: make(chan bool)}
 }
 
