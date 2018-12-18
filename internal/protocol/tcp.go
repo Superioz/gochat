@@ -14,7 +14,7 @@ import (
 // represents a tcp client
 type TCPClient struct {
 	UUID             uuid.UUID
-	Nickname         string
+	Nick             string
 	Connection       *net.Conn
 	outgoingMessages chan *network.MessagePacket
 	incomingMessages chan *network.MessagePacket
@@ -22,7 +22,7 @@ type TCPClient struct {
 }
 
 func NewTCPClient() TCPClient {
-	return TCPClient{UUID: uuid.NewV4(), Nickname: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
+	return TCPClient{UUID: uuid.NewV4(), Nick: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
 		incomingMessages: make(chan *network.MessagePacket), stateUpdates: make(chan bool)}
 }
 
@@ -34,6 +34,7 @@ func (p *TCPClient) Connect(ip string) {
 		log.Fatal(err)
 	}
 	p.Connection = &conn
+	fmt.Println("Connected to tcp server @" + ip + ".")
 
 	select {
 	case p.stateUpdates <- true:
@@ -103,4 +104,9 @@ func (p TCPClient) Receive() chan *network.MessagePacket {
 // returns the current connection state channel
 func (p TCPClient) State() chan bool {
 	return p.stateUpdates
+}
+
+// returns the current nickname
+func (p TCPClient) Nickname() string {
+	return p.Nick
 }

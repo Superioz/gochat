@@ -1,0 +1,7 @@
+FROM alpine
+
+EXPOSE 6000
+
+COPY server.exe /etc/chatserver
+
+CMD ./etc/chatserver

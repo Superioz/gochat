@@ -1,0 +1,17 @@
+# create binary
+FROM golang:1.10.1 AS builder
+
+COPY . /go/src/github.com/superioz/gochat/
+WORKDIR /go/src/github.com/superioz/gochat/
+
+RUN set -x && \
+    go get github.com/golang/dep/cmd/dep && \
+    dep ensure -v
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o client /go/src/github.com/superioz/gochat/cmd/client/client.go
+
+# create the container image
+FROM alpine
+COPY --from=builder /go/src/github.com/superioz/gochat/client .
+
+ENTRYPOINT ["./client"]

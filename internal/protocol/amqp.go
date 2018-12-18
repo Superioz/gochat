@@ -14,7 +14,7 @@ const queueName string = "goqueue"
 // represents an amqp client
 type AMQPClient struct {
 	UUID             uuid.UUID
-	Nickname         string
+	Nick             string
 	Connection       *amqp.Connection
 	outgoingMessages chan *network.MessagePacket
 	incomingMessages chan *network.MessagePacket
@@ -25,7 +25,7 @@ type AMQPClient struct {
 }
 
 func NewAMQPClient() AMQPClient {
-	return AMQPClient{UUID: uuid.NewV4(), Nickname: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
+	return AMQPClient{UUID: uuid.NewV4(), Nick: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
 		incomingMessages: make(chan *network.MessagePacket), stateUpdates: make(chan bool), Logging: false}
 }
 
@@ -41,6 +41,7 @@ func (p *AMQPClient) Connect(ip string) {
 		log.Fatal(err)
 	}
 	p.Connection = conn
+	fmt.Println("Connected to amqp server @" + ip + ".")
 
 	// creates a channel to amqp server
 	ch, err := conn.Channel()
@@ -144,4 +145,9 @@ func (p AMQPClient) Receive() chan *network.MessagePacket {
 // returns the current connection state channel
 func (p AMQPClient) State() chan bool {
 	return p.stateUpdates
+}
+
+// returns the current nickname
+func (p AMQPClient) Nickname() string {
+	return p.Nick
 }

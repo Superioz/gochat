@@ -1,6 +1,9 @@
 package protocol
 
-import "github.com/superioz/gochat/internal/network"
+import (
+	"github.com/superioz/gochat/internal/env"
+	"github.com/superioz/gochat/internal/network"
+)
 
 type Client interface {
 	Connect(ip string)
@@ -8,6 +11,8 @@ type Client interface {
 	Send(packet network.MessagePacket)
 	Receive() chan *network.MessagePacket
 	State() chan bool
+
+	Nickname() string
 }
 
 type Server interface {
@@ -16,4 +21,19 @@ type Server interface {
 	Send() chan *network.MessagePacket
 	Receive() chan *network.MessagePacket
 	State() chan bool
+}
+
+func GetClient() Client {
+	t := env.GetChatType()
+
+	var c Client
+	if t == "amqp" {
+		cl := NewAMQPClient()
+		cl.Logging = env.IsLoggingEnabled()
+		c = &cl
+	} else {
+		cl := NewTCPClient()
+		c = &cl
+	}
+	return c
 }
