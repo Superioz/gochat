@@ -1,45 +1,51 @@
 package env
 
-import "os"
-
-const (
-	envType    string = "GOCHAT_TYPE"
-	envLogging string = "GOCHAT_LOGGING"
-	envHost    string = "GOCHAT_SERVER_HOST"
-	envPort    string = "GOCHAT_SERVER_PORT"
+import (
+	"github.com/superioz/gochat/internal/logs"
+	"os"
 )
 
+const (
+	envType        string = "GOCHAT_TYPE"
+	envLogging     string = "GOCHAT_LOGGING"
+	envHost        string = "GOCHAT_SERVER_HOST"
+	envPort        string = "GOCHAT_SERVER_PORT"
+	envLoggingHost string = "GOCHAT_LOGGING_HOST"
+	envLoggingUser string = "GOCHAT_LOGGING_USER"
+	envLoggingPass string = "GOCHAT_LOGGING_PASS"
+)
+
+func GetLoggingCredentials() logs.LogCredentials {
+	h := getOrDefault(envLoggingHost, "127.0.0.1")
+	u := getOrDefault(envLoggingUser, "elastic")
+	p := getOrDefault(envLoggingPass, "changeme")
+
+	return logs.LogCredentials{Host: h, User: u, Password: p}
+}
+
 func GetServerPort(defPort string) string {
-	port, r2 := os.LookupEnv(envPort)
-	if !r2 {
-		port = defPort
-	}
-	return port
+	return getOrDefault(envPort, defPort)
 }
 
 func GetServerIp(defPort string) string {
-	host, r := os.LookupEnv(envHost)
-	if !r {
-		host = "127.0.0.1"
-	}
+	host := getOrDefault(envHost, "127.0.0.1")
 
 	port := GetServerPort(defPort)
 	return host + ":" + port
 }
 
 func GetChatType() string {
-	t, r := os.LookupEnv(envType)
-	if !r {
-		return "tcp"
-	}
-	return t
+	return getOrDefault(envType, "tcp")
 }
 
 func IsLoggingEnabled() bool {
-	t, r := os.LookupEnv(envLogging)
+	return getOrDefault(envLogging, "false") == "true"
+}
 
+func getOrDefault(key string, def string) string {
+	e, r := os.LookupEnv(key)
 	if !r {
-		return false
+		return def
 	}
-	return t == "true"
+	return e
 }

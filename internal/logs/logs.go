@@ -8,13 +8,19 @@ import (
 )
 
 const (
-	logIndex   string = "chatlogs"
+	logIndex string = "chatlogs"
 )
+
+type LogCredentials struct {
+	Host     string
+	User     string
+	Password string
+}
 
 type LogEntry struct {
 	User      string `json:"user"`
 	Message   string `json:"message"`
-	Timestamp int64  `json:"timestamp"`
+	Timestamp string `json:"timestamp"`
 }
 
 type ChatLogger struct {
@@ -26,14 +32,14 @@ func (l *ChatLogger) AddEntry(user string, message string) error {
 		return errors.New("log client is not running")
 	}
 
-	entry := LogEntry{User: user, Message: message, Timestamp: time.Now().Unix()}
+	entry := LogEntry{User: user, Message: message, Timestamp: time.Now().Format(time.RFC3339Nano)}
 	_, err := l.Client.Index().Index(logIndex).Type("doc").BodyJson(entry).Do(context.Background())
 	return err
 }
 
-func CreateAndConnect(url string, user string, pass string) (ChatLogger, error) {
+func CreateAndConnect(cred LogCredentials) (ChatLogger, error) {
 	// Create a new elastic search client
-	client, err := elastic.NewClient(elastic.SetURL(url), elastic.SetBasicAuth(user, pass), elastic.SetSniff(false))
+	client, err := elastic.NewClient(elastic.SetURL("http://"+cred.Host+":9200"), elastic.SetBasicAuth(cred.Host, cred.Password), elastic.SetSniff(false))
 	if err != nil {
 		return ChatLogger{}, err
 	}

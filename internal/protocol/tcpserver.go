@@ -3,6 +3,8 @@ package protocol
 import (
 	"bufio"
 	"fmt"
+	"github.com/superioz/gochat/internal/env"
+	"github.com/superioz/gochat/internal/logs"
 	"github.com/superioz/gochat/internal/network"
 	"log"
 	"net"
@@ -17,6 +19,7 @@ type TCPServer struct {
 	deadConnections  chan net.Conn
 	stateUpdates     chan bool
 	Clients          map[net.Conn]uint16
+	Logger           logs.ChatLogger
 }
 
 func NewTCPServer() TCPServer {
@@ -38,6 +41,15 @@ func (s *TCPServer) Start(ip string) error {
 	}
 	s.Listener = server
 	fmt.Println("TCP server started. Ready for connections..")
+
+	// start logging
+	go func(s *TCPServer) {
+		s.Logger, err = logs.CreateAndConnect(env.GetLoggingCredentials())
+
+		if err != nil {
+			fmt.Println("Couldn't connect to logging service! No logs will be stored..")
+		}
+	}(s)
 
 	// listens for new connections
 	go func(s TCPServer) {
@@ -93,6 +105,12 @@ func (s *TCPServer) Start(ip string) error {
 			case m := <-s.incomingMessages:
 				// print client message to console
 				fmt.Println(m.Message)
+
+				// log message
+				go func() {
+					user, message := m.UserAndMessage()
+					_ = s.Logger.AddEntry(user, message)
+				}()
 
 				// broadcast the incoming message to every client
 				for cl := range s.Clients {

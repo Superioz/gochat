@@ -5,7 +5,7 @@ import (
 )
 
 func TestCreateClient(t *testing.T) {
-	log, err := CreateAndConnect("http://127.0.0.1:9200", "elastic", "changeme")
+	log, err := CreateAndConnect(LogCredentials{"127.0.0.1", "elastic", "changeme"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -16,7 +16,7 @@ func TestCreateClient(t *testing.T) {
 }
 
 func TestChatLogger_AddEntry(t *testing.T) {
-	log, err := CreateAndConnect("http://127.0.0.1:9200", "elastic", "changeme")
+	log, err := CreateAndConnect(LogCredentials{"127.0.0.1", "elastic", "changeme"})
 	if err != nil {
 		t.Skip(err)
 	}

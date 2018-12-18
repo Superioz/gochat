@@ -3,6 +3,7 @@ package network
 import (
 	"bytes"
 	"errors"
+	"strings"
 )
 
 var packetRegistry = make(map[uint16]Packet)
@@ -43,8 +44,17 @@ func DecodeBytes(b []byte) (Packet, error) {
 // a specific message from a specific client.
 // The `Id` is the id of the packet in the registry.
 type MessagePacket struct {
-	Id       uint16
-	Message  string
+	Id      uint16
+	Message string
+}
+
+func (p *MessagePacket) UserAndMessage() (string, string) {
+	spl := strings.Split(p.Message, ":")
+
+	if len(spl) == 1 {
+		return "", spl[0]
+	}
+	return spl[0], strings.Trim(spl[1], " ")
 }
 
 func NewMessagePacket(m string) *MessagePacket {

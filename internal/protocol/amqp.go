@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/satori/go.uuid"
 	"github.com/streadway/amqp"
+	"github.com/superioz/gochat/internal/env"
+	"github.com/superioz/gochat/internal/logs"
 	"github.com/superioz/gochat/internal/network"
 	"github.com/superioz/gochat/internal/nickname"
 	"log"
@@ -21,16 +23,12 @@ type AMQPClient struct {
 	stateUpdates     chan bool
 	Channel          *amqp.Channel
 	Queue            amqp.Queue
-	Logging          bool
+	Logger           logs.ChatLogger
 }
 
 func NewAMQPClient() AMQPClient {
 	return AMQPClient{UUID: uuid.NewV4(), Nick: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
-		incomingMessages: make(chan *network.MessagePacket), stateUpdates: make(chan bool), Logging: false}
-}
-
-func (p *AMQPClient) ActivateLogging() {
-	p.Logging = true
+		incomingMessages: make(chan *network.MessagePacket), stateUpdates: make(chan bool)}
 }
 
 // connects the client to the amqp server
@@ -42,6 +40,17 @@ func (p *AMQPClient) Connect(ip string) {
 	}
 	p.Connection = conn
 	fmt.Println("Connected to amqp server @" + ip + ".")
+
+	// start logging
+	if env.IsLoggingEnabled() {
+		go func(p *AMQPClient) {
+			p.Logger, err = logs.CreateAndConnect(env.GetLoggingCredentials())
+
+			if err != nil {
+				fmt.Println("Couldn't connect to logging service! No logs will be stored..")
+			}
+		}(p)
+	}
 
 	// creates a channel to amqp server
 	ch, err := conn.Channel()
@@ -85,6 +94,18 @@ func (p *AMQPClient) Connect(ip string) {
 					})
 			case m := <-p.incomingMessages:
 				fmt.Println(m.Message)
+
+				// log the message
+				if env.IsLoggingEnabled() {
+					go func() {
+						user, message := m.UserAndMessage()
+						err := p.Logger.AddEntry(user, message)
+
+						if err != nil {
+							fmt.Println("Couldn't sent log!", err)
+						}
+					}()
+				}
 				break
 			}
 		}

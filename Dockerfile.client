@@ -14,4 +14,6 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o client /go/src/github.c
 FROM alpine
 COPY --from=builder /go/src/github.com/superioz/gochat/client .
 
+ENV GOCHAT_TYPE=amqp GOCHAT_LOGGING=true GOCHAT_SERVER_HOST=amqp://guest:guest@localhost GOCHAT_SERVER_PORT=5672
+
 ENTRYPOINT ["./client"]

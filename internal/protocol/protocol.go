@@ -29,7 +29,6 @@ func GetClient() Client {
 	var c Client
 	if t == "amqp" {
 		cl := NewAMQPClient()
-		cl.Logging = env.IsLoggingEnabled()
 		c = &cl
 	} else {
 		cl := NewTCPClient()
