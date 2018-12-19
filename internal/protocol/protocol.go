@@ -24,7 +24,7 @@ type Server interface {
 }
 
 func GetClient() Client {
-	t := env.GetChatType()
+	t := env.GetProtocol()
 
 	var c Client
 	if t == "amqp" {

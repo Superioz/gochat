@@ -28,6 +28,7 @@ type ChatLogger struct {
 	Connected bool
 }
 
+// adds a new entry to the elastic search database
 func (l *ChatLogger) AddEntry(user string, message string) error {
 	if !l.Connected {
 		return errors.New("log client is not running")
@@ -38,6 +39,8 @@ func (l *ChatLogger) AddEntry(user string, message string) error {
 	return err
 }
 
+// creates the elastic client and connects to the elastic search database
+// with given `cred`entials
 func CreateAndConnect(cred LogCredentials) (ChatLogger, error) {
 	// Create a new elastic search client
 	client, err := elastic.NewClient(elastic.SetURL("http://"+cred.Host+":9200"), elastic.SetBasicAuth(cred.Host, cred.Password), elastic.SetSniff(false))
