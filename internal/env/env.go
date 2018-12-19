@@ -13,14 +13,38 @@ const (
 	LoggingHost string = "GOCHAT_LOGGING_HOST"
 	LoggingUser string = "GOCHAT_LOGGING_USER"
 	LoggingPass string = "GOCHAT_LOGGING_PASS"
+
+	defaultProtocol    string = "tcp"
+	defaultLogging     string = "false"
+	defaultHost        string = "127.0.0.1"
+	defaultPort        string = "6000"
+	defaultLoggingHost string = "127.0.0.1"
+	defaultLoggingUser string = "elastic"
+	defaultLoggingPass string = "changeme"
 )
+
+// set defaults for protocols other than
+// `tcp`
+func SetDefaults(prot string) {
+	switch prot {
+	case "amqp":
+		_ = os.Setenv(Protocol, "amqp")
+		_ = os.Setenv(Logging, "true")
+		_ = os.Setenv(Host, "amqp://guest:guest@localhost")
+		_ = os.Setenv(Port, "5672")
+		break
+	case "tcp":
+		// take default values
+		break
+	}
+}
 
 // returns the logging credentials fetched
 // from the environmental variables
 func GetLoggingCredentials() logs.LogCredentials {
-	h := getOrDefault(LoggingHost, "127.0.0.1")
-	u := getOrDefault(LoggingUser, "elastic")
-	p := getOrDefault(LoggingPass, "changeme")
+	h := getOrDefault(LoggingHost, defaultLoggingHost)
+	u := getOrDefault(LoggingUser, defaultLoggingUser)
+	p := getOrDefault(LoggingPass, defaultLoggingPass)
 
 	return logs.LogCredentials{Host: h, User: u, Password: p}
 }
@@ -31,21 +55,21 @@ func GetServerPort(defPort string) string {
 }
 
 // get the server host + port from environmental variables
-func GetServerIp(defPort string) string {
-	host := getOrDefault(Host, "127.0.0.1")
+func GetServerIp() string {
+	host := getOrDefault(Host, defaultHost)
 
-	port := GetServerPort(defPort)
+	port := GetServerPort(defaultPort)
 	return host + ":" + port
 }
 
 // get the protocol type from environmental variables
 func GetProtocol() string {
-	return getOrDefault(Protocol, "tcp")
+	return getOrDefault(Protocol, defaultProtocol)
 }
 
 // get if logging is enabled from environmental variables
 func IsLoggingEnabled() bool {
-	return getOrDefault(Logging, "false") == "true"
+	return getOrDefault(Logging, defaultLogging) == "true"
 }
 
 func getOrDefault(key string, def string) string {

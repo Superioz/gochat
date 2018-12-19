@@ -10,9 +10,7 @@ import (
 // THIS service is only important if we want to use tcp connections
 // or logging with `elastic-search`
 func main() {
-	// Initializes the default packets
-	network.InitializeRegistry()
-
+	// start tcp server
 	s := protocol.NewTCPServer()
 	err := s.Start(":6000")
 	if err != nil {

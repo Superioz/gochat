@@ -8,6 +8,10 @@ import (
 
 var packetRegistry = make(map[uint16]Packet)
 
+func init() {
+	packetRegistry[0] = &MessagePacket{Id: 0}
+}
+
 // Returns an abstract packet. Only decodes and encodes
 // a []byte
 type Packet interface {
@@ -17,10 +21,6 @@ type Packet interface {
 
 func GetPacket(id uint16) Packet {
 	return packetRegistry[id]
-}
-
-func InitializeRegistry() {
-	packetRegistry[0] = &MessagePacket{Id: 0}
 }
 
 func DecodeBytes(b []byte) (Packet, error) {
