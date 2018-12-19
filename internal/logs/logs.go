@@ -24,11 +24,12 @@ type LogEntry struct {
 }
 
 type ChatLogger struct {
-	Client *elastic.Client
+	Client    *elastic.Client
+	Connected bool
 }
 
 func (l *ChatLogger) AddEntry(user string, message string) error {
-	if !l.Client.IsRunning() {
+	if !l.Connected {
 		return errors.New("log client is not running")
 	}
 
@@ -40,16 +41,20 @@ func (l *ChatLogger) AddEntry(user string, message string) error {
 func CreateAndConnect(cred LogCredentials) (ChatLogger, error) {
 	// Create a new elastic search client
 	client, err := elastic.NewClient(elastic.SetURL("http://"+cred.Host+":9200"), elastic.SetBasicAuth(cred.Host, cred.Password), elastic.SetSniff(false))
-	if err != nil {
-		return ChatLogger{}, err
-	}
+	cl := ChatLogger{Client: client}
 
-	// Create default index for our logs
+	if err != nil {
+		cl.Connected = false
+		return cl, err
+	}
+	cl.Connected = true
+
 	r, err := client.IndexExists(logIndex).Do(context.Background())
 	if err != nil {
 		return ChatLogger{}, err
 	}
 
+	// Create default index for our logs
 	if !r {
 		_, err = client.CreateIndex(logIndex).Do(context.Background())
 		if err != nil {

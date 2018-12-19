@@ -110,6 +110,10 @@ func (s *TCPServer) Start(ip string) error {
 				go func() {
 					user, message := m.UserAndMessage()
 					_ = s.Logger.AddEntry(user, message)
+
+					if s.Logger.Connected && err != nil {
+						fmt.Println("Couldn't sent log!", err)
+					}
 				}()
 
 				// broadcast the incoming message to every client

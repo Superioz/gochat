@@ -101,7 +101,7 @@ func (p *AMQPClient) Connect(ip string) {
 						user, message := m.UserAndMessage()
 						err := p.Logger.AddEntry(user, message)
 
-						if err != nil {
+						if p.Logger.Connected && err != nil {
 							fmt.Println("Couldn't sent log!", err)
 						}
 					}()

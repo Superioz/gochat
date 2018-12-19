@@ -14,10 +14,10 @@ func main() {
 	network.InitializeRegistry()
 
 	// TODO remove amqp client for testing
-	err := os.Setenv("GOCHAT_LOGGING", "true")
-	if err != nil {
-		panic(err)
-	}
+	_ = os.Setenv("GOCHAT_TYPE", "amqp")
+	_ = os.Setenv("GOCHAT_LOGGING", "true")
+	_ = os.Setenv("GOCHAT_SERVER_HOST", "amqp://guest:guest@localhost")
+	_ = os.Setenv("GOCHAT_SERVER_PORT", "5672")
 
 	// creates a new client
 	fmt.Printf("Starting %s client..\n", env.GetChatType())
@@ -27,8 +27,8 @@ func main() {
 	fmt.Printf("Starting %s client..\n", env.GetChatType())
 	go cl.Connect(env.GetServerIp("6000"))*/
 
-	cl := protocol.NewAMQPClient()
-	go cl.Connect("amqp://guest:guest@localhost:5672")
+	cl := protocol.GetClient()
+	go cl.Connect(env.GetServerIp("6000"))
 
 	// listens to console input for message sending
 	i := input.ListenToConsole()
