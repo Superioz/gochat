@@ -7,7 +7,6 @@ import (
 	"github.com/superioz/gochat/internal/env"
 	"github.com/superioz/gochat/internal/logs"
 	"github.com/superioz/gochat/internal/network"
-	"github.com/superioz/gochat/internal/nickname"
 	"log"
 )
 
@@ -26,8 +25,8 @@ type AMQPClient struct {
 	Logger           logs.ChatLogger
 }
 
-func NewAMQPClient() AMQPClient {
-	return AMQPClient{UUID: uuid.NewV4(), Nick: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
+func NewAMQPClient(nick string) AMQPClient {
+	return AMQPClient{UUID: uuid.NewV4(), Nick: nick, outgoingMessages: make(chan *network.MessagePacket),
 		incomingMessages: make(chan *network.MessagePacket), stateUpdates: make(chan bool)}
 }
 

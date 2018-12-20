@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/satori/go.uuid"
 	"github.com/superioz/gochat/internal/network"
-	"github.com/superioz/gochat/internal/nickname"
 	"log"
 	"net"
 	"reflect"
@@ -21,8 +20,8 @@ type TCPClient struct {
 	stateUpdates     chan bool
 }
 
-func NewTCPClient() TCPClient {
-	return TCPClient{UUID: uuid.NewV4(), Nick: nickname.GetRandom(), outgoingMessages: make(chan *network.MessagePacket),
+func NewTCPClient(nick string) TCPClient {
+	return TCPClient{UUID: uuid.NewV4(), Nick: nick, outgoingMessages: make(chan *network.MessagePacket),
 		incomingMessages: make(chan *network.MessagePacket), stateUpdates: make(chan bool)}
 }
 

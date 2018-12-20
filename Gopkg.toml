@@ -44,3 +44,7 @@
 [[constraint]]
   name = "github.com/manifoldco/promptui"
   version = "0.3.2"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/common-nighthawk/go-figure"

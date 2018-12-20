@@ -1,4 +1,4 @@
-package input
+package console
 
 import (
 	"github.com/manifoldco/promptui"

@@ -23,15 +23,15 @@ type Server interface {
 	State() chan bool
 }
 
-func GetClient() Client {
+func GetClient(nick string) Client {
 	t := env.GetProtocol()
 
 	var c Client
 	if t == "amqp" {
-		cl := NewAMQPClient()
+		cl := NewAMQPClient(nick)
 		c = &cl
 	} else {
-		cl := NewTCPClient()
+		cl := NewTCPClient(nick)
 		c = &cl
 	}
 	return c

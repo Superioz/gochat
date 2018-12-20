@@ -37,6 +37,14 @@
   version = "v0.3.4"
 
 [[projects]]
+  branch = "master"
+  digest = "1:7bbfeef88a6cc7d65a6a009ba696e980dcf84ed31a7dd6da7e0c6c2ff544df92"
+  name = "github.com/common-nighthawk/go-figure"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "18b2b544842cab16f3ff418fb5290d8f2896a069"
+
+[[projects]]
   branch = "travis-1.9"
   digest = "1:e8f5d9c09a7209c740e769713376abda388c41b777ba8e9ed52767e21acf379f"
   name = "github.com/golang/lint"
@@ -229,6 +237,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/common-nighthawk/go-figure",
     "github.com/manifoldco/promptui",
     "github.com/olivere/elastic",
     "github.com/pkg/errors",

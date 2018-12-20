@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/superioz/gochat/internal/input"
+	"github.com/superioz/gochat/internal/console"
 	"github.com/superioz/gochat/internal/network"
 	"github.com/superioz/gochat/internal/protocol"
 )
@@ -17,7 +17,7 @@ func main() {
 		panic(err)
 	}
 
-	i := input.ListenToConsole()
+	i := console.ListenToConsole()
 	for {
 		select {
 		case m := <-i:
