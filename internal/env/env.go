@@ -33,6 +33,12 @@ func SetDefaults(prot string) {
 		_ = os.Setenv(Host, "amqp://guest:guest@localhost")
 		_ = os.Setenv(Port, "5672")
 		break
+	case "kafka":
+		_ = os.Setenv(Protocol, "kafka")
+		_ = os.Setenv(Logging, "true")
+		_ = os.Setenv(Host, "localhost")
+		_ = os.Setenv(Port, "9092")
+		break
 	case "tcp":
 		// take default values
 		break

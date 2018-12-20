@@ -16,13 +16,14 @@ const queueName string = "goqueue"
 type AMQPClient struct {
 	UUID             uuid.UUID
 	Nick             string
-	Connection       *amqp.Connection
 	outgoingMessages chan *network.MessagePacket
 	incomingMessages chan *network.MessagePacket
 	stateUpdates     chan bool
-	Channel          *amqp.Channel
-	Queue            amqp.Queue
 	Logger           logs.ChatLogger
+
+	Connection *amqp.Connection
+	Channel    *amqp.Channel
+	Queue      amqp.Queue
 }
 
 func NewAMQPClient(nick string) AMQPClient {
@@ -38,7 +39,7 @@ func (p *AMQPClient) Connect(ip string) {
 		log.Fatal(err)
 	}
 	p.Connection = conn
-	fmt.Println("Connected to amqp server @" + ip + ".")
+	fmt.Println("Connected to amqp node @" + ip + ".")
 
 	// start logging
 	if env.IsLoggingEnabled() {

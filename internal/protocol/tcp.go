@@ -14,10 +14,11 @@ import (
 type TCPClient struct {
 	UUID             uuid.UUID
 	Nick             string
-	Connection       *net.Conn
 	outgoingMessages chan *network.MessagePacket
 	incomingMessages chan *network.MessagePacket
 	stateUpdates     chan bool
+
+	Connection *net.Conn
 }
 
 func NewTCPClient(nick string) TCPClient {

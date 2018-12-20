@@ -12,7 +12,7 @@ func PromptChooseProtocol(force string) error {
 	if len(force) == 0 {
 		prompt := promptui.Select{
 			Label: "What protocol do you want to use?",
-			Items: []string{"tcp", "amqp"},
+			Items: []string{"tcp", "amqp", "kafka"},
 		}
 
 		_, r, err := prompt.Run()

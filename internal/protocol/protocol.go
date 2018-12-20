@@ -30,6 +30,9 @@ func GetClient(nick string) Client {
 	if t == "amqp" {
 		cl := NewAMQPClient(nick)
 		c = &cl
+	} else if t == "kafka" {
+		cl := NewKafkaClient(nick)
+		c = &cl
 	} else {
 		cl := NewTCPClient(nick)
 		c = &cl
