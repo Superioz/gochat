@@ -2,6 +2,7 @@ package logs
 
 import (
 	"context"
+	"fmt"
 	"github.com/olivere/elastic"
 	"github.com/pkg/errors"
 	"time"
@@ -42,8 +43,11 @@ func (l *ChatLogger) AddEntry(user string, message string) error {
 // creates the elastic client and connects to the elastic search database
 // with given `cred`entials
 func CreateAndConnect(cred LogCredentials) (ChatLogger, error) {
+	url := cred.Host+":9200"
+	fmt.Println("Connecting to elastic search @" + url + " ..")
+
 	// Create a new elastic search client
-	client, err := elastic.NewClient(elastic.SetURL("http://"+cred.Host+":9200"), elastic.SetBasicAuth(cred.Host, cred.Password), elastic.SetSniff(false))
+	client, err := elastic.NewClient(elastic.SetURL("http://" + url), elastic.SetBasicAuth(cred.Host, cred.Password), elastic.SetSniff(false))
 	cl := ChatLogger{Client: client}
 
 	if err != nil {

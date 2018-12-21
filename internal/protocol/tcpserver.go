@@ -35,21 +35,22 @@ func NewTCPServer() TCPServer {
 
 // starts the tcp server with given `ip`
 func (s *TCPServer) Start(ip string) error {
+	// start logging
+	l, err := logs.CreateAndConnect(env.GetLoggingCredentials())
+	s.Logger = l
+
+	if err != nil {
+		fmt.Println("Couldn't connect to logging service! No logs will be stored..")
+	}
+
+	// start the tcp server
+	fmt.Println("Starting tcp server..")
 	server, err := net.Listen("tcp", ip)
 	if err != nil {
 		log.Fatal(err)
 	}
 	s.Listener = server
 	fmt.Println("TCP server started. Ready for connections..")
-
-	// start logging
-	go func(s *TCPServer) {
-		s.Logger, err = logs.CreateAndConnect(env.GetLoggingCredentials())
-
-		if err != nil {
-			fmt.Println("Couldn't connect to logging service! No logs will be stored..")
-		}
-	}(s)
 
 	// listens for new connections
 	go func(s TCPServer) {
@@ -84,7 +85,8 @@ func (s *TCPServer) Start(ip string) error {
 
 						m, err := network.DecodeBytes(b)
 						if err != nil {
-							break
+							fmt.Println("Couldn't decode bytes!", b)
+							continue
 						}
 
 						// put decoded packet into channel
