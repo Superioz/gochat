@@ -34,23 +34,22 @@ func NewAMQPClient(nick string) AMQPClient {
 // connects the client to the amqp server
 // uses the `ip` to connect to the server
 func (p *AMQPClient) Connect(ip string) {
+	// start logging
+	if env.IsLoggingEnabled() {
+		l, err := logs.CreateAndConnect(env.GetLoggingCredentials())
+		p.Logger = l
+
+		if err != nil {
+			fmt.Println("Couldn't connect to logging service! No logs will be stored..")
+		}
+	}
+
 	conn, err := amqp.Dial(ip)
 	if err != nil {
 		log.Fatal(err)
 	}
 	p.Connection = conn
 	fmt.Println("Connected to amqp node @" + ip + ".")
-
-	// start logging
-	if env.IsLoggingEnabled() {
-		go func(p *AMQPClient) {
-			p.Logger, err = logs.CreateAndConnect(env.GetLoggingCredentials())
-
-			if err != nil {
-				fmt.Println("Couldn't connect to logging service! No logs will be stored..")
-			}
-		}(p)
-	}
 
 	// creates a channel to amqp server
 	ch, err := conn.Channel()

@@ -40,6 +40,16 @@ func (c *KafkaClient) Connect(ip string) {
 
 // initialises the producer
 func (c *KafkaClient) startProducer(ip string) {
+	// start logging
+	if env.IsLoggingEnabled() {
+		l, err := logs.CreateAndConnect(env.GetLoggingCredentials())
+		c.Logger = l
+
+		if err != nil {
+			fmt.Println("Couldn't connect to logging service! No logs will be stored..")
+		}
+	}
+
 	producer, err := sarama.NewAsyncProducer([]string{ip}, nil)
 	if err != nil {
 		panic(err)
@@ -78,17 +88,6 @@ func (c *KafkaClient) startConsumer(ip string) {
 	}
 	c.Consumer = consumer
 	fmt.Println("Connected consumer to kafka node @" + ip + ".")
-
-	// start logging
-	if env.IsLoggingEnabled() {
-		go func(c *KafkaClient) {
-			c.Logger, err = logs.CreateAndConnect(env.GetLoggingCredentials())
-
-			if err != nil {
-				fmt.Println("Couldn't connect to logging service! No logs will be stored..")
-			}
-		}(c)
-	}
 
 	defer func() {
 		if err := consumer.Close(); err != nil {
