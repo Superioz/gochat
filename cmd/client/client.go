@@ -14,7 +14,7 @@ import (
 
 func main() {
 	// influx
-	_ := client.Message{}
+	_ = client.Message{}
 
 	// get flags for test mode and protocol forcing
 	test := flag.Bool("t", false, "sets the test environment")
