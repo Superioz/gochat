@@ -128,6 +128,29 @@
   revision = "1003c8bd00dc2869cb5ca5282e6ce33834fed514"
 
 [[projects]]
+  digest = "1:718c57979a9197414a044fff2028e57cb9fe145069e4f507059755bfe87f1bfe"
+  name = "github.com/influxdata/influxdb"
+  packages = [
+    "client/v2",
+    "models",
+    "pkg/escape",
+  ]
+  pruneopts = "UT"
+  revision = "76f907b0fada2f16931e37471da695349fcdf8c6"
+  version = "v1.7.2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:ac6b73796941a7ab33ec69fc32f9886a6e7506998f822e3d5205377aee77284a"
+  name = "github.com/influxdata/platform"
+  packages = [
+    "models",
+    "pkg/escape",
+  ]
+  pruneopts = "UT"
+  revision = "94b7c3cea0ef7aa9ecb96ae35c756728b85625f2"
+
+[[projects]]
   branch = "master"
   digest = "1:e51f40f0c19b39c1825eadd07d5c0a98a2ad5942b166d9fc4f54750ce9a04810"
   name = "github.com/juju/ansiterm"
@@ -314,6 +337,7 @@
   input-imports = [
     "github.com/Shopify/sarama",
     "github.com/common-nighthawk/go-figure",
+    "github.com/influxdata/influxdb/client/v2",
     "github.com/manifoldco/promptui",
     "github.com/olivere/elastic",
     "github.com/pkg/errors",
