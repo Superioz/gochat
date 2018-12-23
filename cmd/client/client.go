@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/common-nighthawk/go-figure"
-	"github.com/influxdata/influxdb/client/v2"
 	"github.com/superioz/gochat/internal/console"
 	"github.com/superioz/gochat/internal/env"
 	"github.com/superioz/gochat/internal/network"
@@ -13,9 +12,6 @@ import (
 )
 
 func main() {
-	// influx
-	_ = client.Message{}
-
 	// get flags for test mode and protocol forcing
 	test := flag.Bool("t", false, "sets the test environment")
 	prot := flag.String("p", "", "forces a protocol")
